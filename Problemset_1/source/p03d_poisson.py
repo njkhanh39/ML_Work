@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import util
 
@@ -17,8 +18,21 @@ def main(lr, train_path, eval_path, pred_path):
     x_train, y_train = util.load_dataset(train_path, add_intercept=False)
 
     # *** START CODE HERE ***
+
     # Fit a Poisson Regression model
+    clf = PoissonRegression(step_size = lr) #lr = 1e-7, pretty smol
+    clf.fit(x_train, y_train)
+
     # Run on the validation set, and use np.savetxt to save outputs to pred_path
+    x_eval, y_eval = util.load_dataset(eval_path, add_intercept=False)
+    y_pred = clf.predict(x_eval)
+    np.savetxt(pred_path, y_pred)
+
+    plt.figure()
+    plt.plot(y_eval, y_pred, 'bx')
+    plt.xlabel('true counts')
+    plt.ylabel('predict counts')
+    plt.savefig('output/p03d.png')
     # *** END CODE HERE ***
 
 
@@ -39,6 +53,19 @@ class PoissonRegression(LinearModel):
             y: Training example labels. Shape (m,).
         """
         # *** START CODE HERE ***
+        m,n = x.shape
+
+        self.theta = np.zeros(n)
+
+        while(True):
+            old_theta = self.theta
+            h_theta = self.predict(x)
+
+            self.theta = self.theta + self.step_size * np.dot(x.T, (y - h_theta))/m
+
+            if np.linalg.norm(self.theta - old_theta, ord=1) < self.eps:
+                break
+
         # *** END CODE HERE ***
 
     def predict(self, x):
@@ -51,4 +78,5 @@ class PoissonRegression(LinearModel):
             Floating-point prediction for each input, shape (m,).
         """
         # *** START CODE HERE ***
+        return np.exp(np.dot(x, self.theta.T))
         # *** END CODE HERE ***
